@@ -15,17 +15,16 @@ public class DistributeLock {
     private static final CountDownLatch lock = new CountDownLatch(1);
     private static ZooKeeper zkCli;
     private static String lockName;
+    private static boolean lockState = true;
 
     static class ChildWatcher implements Watcher {
         private String clientName;
-        private boolean locked = true;
-
         public ChildWatcher(String clientName) {
             this.clientName = clientName;
         }
 
         public void process(WatchedEvent watchedEvent) {
-            if (!locked) {
+            if (!lockState) {
                 return;
             }
             try {
@@ -33,7 +32,7 @@ public class DistributeLock {
                 String minChild = getMinChild(children);
                 if (minChild.equals(lockName)) {
                     System.out.println(clientName +" have got lock:"+lockName);
-                    locked = false;
+                    lockState = false;
                     lock.countDown();
 
                 }
@@ -66,6 +65,7 @@ public class DistributeLock {
                 String minChild = getMinChild(children);
                 if (minChild.equals(lockName)) {
                     System.out.println(clientName +" have got lock:"+lockName);
+                    lockState = false;
                     lock.countDown();
                 }
             }
